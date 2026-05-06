@@ -8,8 +8,7 @@
     "require-dev": {
         "php": ">=5.5.0",
         "phpmailer/phpmailer": "~6.0",
-        "gregwar/captcha": "~1.1",
-        "phpunit/phpunit": "4.8.*|5.7.*"
+        "gregwar/captcha": "~1.1"
     },
     "autoload": {
         "psr-4": { "": ["application/core/", "application/model/"] }

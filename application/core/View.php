@@ -6,6 +6,13 @@
  */
 class View
 {
+    /** @var array Holds data passed to views, avoids dynamic property deprecation in PHP 8.2+ */
+    private array $data = [];
+
+    public function __get($key) { return $this->data[$key] ?? null; }
+    public function __set($key, $value) { $this->data[$key] = $value; }
+    public function __isset($key) { return isset($this->data[$key]); }
+
     /**
      * simply includes (=shows) the view. this is done from the controller. In the controller, you usually say
      * $this->view->render('help/index'); to show (in this example) the view index.php in the folder help.

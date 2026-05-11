@@ -22,7 +22,7 @@ class RegisterController extends Controller
      */
     public function index()
     {
-        if (LoginModel::isUserLoggedIn()) {
+        if (!LoginModel::isUserLoggedIn() || Session::get('user_account_type') != 7) {
             Redirect::home();
         } else {
             $this->View->render('register/index');
@@ -35,10 +35,15 @@ class RegisterController extends Controller
      */
     public function register_action()
     {
+        if (!LoginModel::isUserLoggedIn() || Session::get('user_account_type') != 7) {
+            Redirect::home();
+            return;
+        }
+
         $registration_successful = RegistrationModel::registerNewUser();
 
         if ($registration_successful) {
-            Redirect::to('login/index');
+            Redirect::to('register/index');
         } else {
             Redirect::to('register/index');
         }

@@ -29,6 +29,7 @@ body {
     border: 1px solid #ccc;
     padding: 20px;
     margin: 30px 0 30px 0;
+    overflow: hidden;
 }
 .container a {
     color: #454545;
@@ -36,6 +37,25 @@ body {
 .container table {
     font-size: 11px;
     margin-top: 20px;
+    width: 100% !important;
+}
+.container .box > div {
+    overflow-x: auto;
+}
+#admin-user-table select,
+#admin-user-table input[type="number"] {
+    width: 70px;
+    padding: 3px 4px;
+    font-size: 11px;
+}
+#admin-user-table input[type="submit"] {
+    padding: 3px 6px;
+    font-size: 11px;
+}
+#admin-user-table td,
+#admin-user-table th {
+    padding: 4px 5px;
+    white-space: nowrap;
 }
 .container table thead td {
     background-color: #f5f5f5;
@@ -134,8 +154,8 @@ body {
 
 /* overview */
 .overview-table img {
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
 }
 
 /* feedback boxes */

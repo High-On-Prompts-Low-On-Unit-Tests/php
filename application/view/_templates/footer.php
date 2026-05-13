@@ -9,7 +9,7 @@
     <script>
         $(document).ready(function () {
             $('#users-table').DataTable();
-            $('#admin-user-table').DataTable();
+            $('#admin-user-table').DataTable({ scrollX: true });
         });
     </script>
 </body>

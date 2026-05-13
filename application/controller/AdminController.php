@@ -15,12 +15,13 @@ class AdminController extends Controller
     }
 
     /**
-     * This method controls what happens when you move to /admin or /admin/index in your app.
+     * Shows admin dashboard with all users and available groups
      */
     public function index()
     {
         $this->View->render('admin/index', array(
-                'users' => UserModel::getPublicProfilesOfAllUsers())
+                'users' => UserModel::getPublicProfilesOfAllUsers(),
+                'groups' => UserGroupModel::getAllGroups())
         );
     }
 

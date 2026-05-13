@@ -8,18 +8,18 @@
 class UserModel
 {
     /**
-     * Gets an array that contains all the users in the database. The array's keys are the user ids.
-     * Each array element is an object, containing a specific user's data.
-     * The avatar line is built using Ternary Operators, have a look here for more:
-     * @see http://davidwalsh.name/php-shorthand-if-else-ternary-operators
+     * Gets all user profiles with their group name via JOIN on user_groups table
      *
-     * @return array The profiles of all users
+     * @return array All user profiles keyed by user_id
      */
     public static function getPublicProfilesOfAllUsers()
     {
         $database = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "SELECT user_id, user_name, user_email, user_active, user_has_avatar, user_deleted FROM users";
+        $sql = "SELECT users.user_id, user_name, user_email, user_active, user_has_avatar, user_deleted,
+                       user_account_type, user_suspension_timestamp, user_groups.group_name
+                FROM users
+                LEFT JOIN user_groups ON users.user_account_type = user_groups.id";
         $query = $database->prepare($sql);
         $query->execute();
 
@@ -27,9 +27,6 @@ class UserModel
 
         foreach ($query->fetchAll() as $user) {
 
-            // all elements of array passed to Filter::XSSFilter for XSS sanitation, have a look into
-            // application/core/Filter.php for more info on how to use. Removes (possibly bad) JavaScript etc from
-            // the user's values
             array_walk_recursive($user, 'Filter::XSSFilter');
 
             $all_users_profiles[$user->user_id] = new stdClass();
@@ -38,6 +35,9 @@ class UserModel
             $all_users_profiles[$user->user_id]->user_email = $user->user_email;
             $all_users_profiles[$user->user_id]->user_active = $user->user_active;
             $all_users_profiles[$user->user_id]->user_deleted = $user->user_deleted;
+            $all_users_profiles[$user->user_id]->user_account_type = $user->user_account_type;
+            $all_users_profiles[$user->user_id]->group_name = $user->group_name;
+            $all_users_profiles[$user->user_id]->user_suspension_timestamp = $user->user_suspension_timestamp;
             $all_users_profiles[$user->user_id]->user_avatar_link = (Config::get('USE_GRAVATAR') ? AvatarModel::getGravatarLinkByEmail($user->user_email) : AvatarModel::getPublicAvatarFilePathOfUser($user->user_has_avatar, $user->user_id));
         }
 

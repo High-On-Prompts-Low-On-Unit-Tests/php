@@ -25,10 +25,13 @@ class AdminController extends Controller
         );
     }
 
+    /**
+     * Processes account settings form: group, suspension, soft delete
+     */
     public function actionAccountSettings()
     {
         AdminModel::setAccountSuspensionAndDeletionStatus(
-            Request::post('suspension'), Request::post('softDelete'), Request::post('user_id')
+            Request::post('suspension'), Request::post('softDelete'), Request::post('user_id'), Request::post('user_account_type')
         );
 
         Redirect::to("admin");

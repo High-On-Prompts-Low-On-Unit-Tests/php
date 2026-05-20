@@ -69,6 +69,58 @@ body {
     padding-top: 10px;
     margin-top: 30px;
 }
+.messages-page {
+    font-family: "PT Sans", Georgia, serif;
+}
+.messages-page .messages-layout {
+    display: flex;
+    gap: 20px;
+}
+.messages-page .messages-list {
+    width: 30%;
+}
+.messages-page .discussion {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-flow: column wrap;
+}
+.messages-page .discussion > .bubble {
+    border-radius: 1em;
+    padding: 0.25em 0.75em;
+    margin: 0.0625em;
+    max-width: 50%;
+}
+.messages-page .discussion > .bubble.sender {
+    align-self: flex-start;
+    background-color: cornflowerblue;
+    color: #fff;
+}
+.messages-page .discussion > .bubble.recipient {
+    align-self: flex-end;
+    background-color: #efefef;
+    color: #222;
+}
+.messages-page .discussion > .bubble.sender.first {
+    border-bottom-left-radius: 0.1em;
+}
+.messages-page .discussion > .bubble.sender.last {
+    border-top-left-radius: 0.1em;
+}
+.messages-page .discussion > .bubble.sender.middle {
+    border-bottom-left-radius: 0.1em;
+    border-top-left-radius: 0.1em;
+}
+.messages-page .discussion > .bubble.recipient.first {
+    border-bottom-right-radius: 0.1em;
+}
+.messages-page .discussion > .bubble.recipient.last {
+    border-top-right-radius: 0.1em;
+}
+.messages-page .discussion > .bubble.recipient.middle {
+    border-bottom-right-radius: 0.1em;
+    border-top-right-radius: 0.1em;
+}
 .container input {
     background-color: #f5f5f5;
     border: 0;

@@ -78,12 +78,181 @@ body {
 }
 .messages-page .messages-list {
     width: 30%;
+    min-width: 200px;
+}
+.messages-page .messages-list ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.messages-page .messages-list li {
+    padding: 6px 10px;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+.messages-page .messages-list li a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.messages-page .messages-list li.has-unread {
+    background-color: #eaf2ff;
+    font-weight: bold;
+}
+.messages-page .messages-list li.active-partner {
+    background-color: #d4e6ff;
+}
+.messages-page .group-icon {
+    margin-right: 4px;
+}
+.messages-page .btn-new-group {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 6px;
+    background: cornflowerblue;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.messages-page .btn-new-group:hover {
+    background: #5a8fd8;
+}
+.messages-page .dm-dropdown {
+    margin-bottom: 10px;
+}
+.messages-page .dm-dropdown summary {
+    cursor: pointer;
+    padding: 6px 10px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 13px;
+}
+.messages-page .dm-dropdown ul {
+    list-style: none;
+    padding: 4px 0 0 10px;
+    margin: 0;
+}
+.messages-page .dm-dropdown ul li {
+    padding: 3px 0;
+}
+.messages-page .dm-dropdown ul li a {
+    text-decoration: none;
+    color: #333;
+}
+.messages-page .dm-dropdown ul li a:hover {
+    color: cornflowerblue;
+}
+.messages-page .chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
+}
+.messages-page .chat-header h3 {
+    margin: 0;
+}
+.messages-page .chat-actions {
+    position: relative;
+    overflow: visible;
+}
+.messages-page .action-menu summary {
+    cursor: pointer;
+    padding: 4px 10px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    font-size: 13px;
+    list-style: none;
+}
+.messages-page .action-menu summary::-webkit-details-marker {
+    display: none;
+}
+.messages-page .action-dropdown {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 12px;
+    min-width: 240px;
+    max-height: 360px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.messages-page .members-section ul {
+    list-style: none;
+    padding: 4px 0;
+    margin: 4px 0 8px 0;
+}
+.messages-page .members-section li {
+    padding: 3px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.messages-page .role-tag {
+    font-size: 10px;
+    background: cornflowerblue;
+    color: #fff;
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+.messages-page .btn-remove {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    margin-left: auto;
+}
+.messages-page .add-member-form,
+.messages-page .rename-form {
+    display: flex;
+    gap: 4px;
+    margin: 8px 0;
+}
+.messages-page .add-member-form select,
+.messages-page .rename-form input {
+    flex: 1;
+    padding: 4px;
+    font-size: 12px;
+}
+.messages-page .add-member-form button,
+.messages-page .rename-form button {
+    padding: 4px 10px;
+    font-size: 12px;
+    background: cornflowerblue;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.messages-page .btn-leave {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 6px;
 }
 .messages-page .discussion {
     max-width: 600px;
     margin: 0 auto;
     display: flex;
-    flex-flow: column wrap;
+    flex-direction: column;
+    max-height: 400px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
 }
 .messages-page .discussion > .bubble {
     border-radius: 1em;
@@ -121,6 +290,35 @@ body {
     border-bottom-right-radius: 0.1em;
     border-top-right-radius: 0.1em;
 }
+.messages-page .sender-label {
+    align-self: flex-end;
+    font-size: 11px;
+    color: #888;
+    margin: 6px 4px 1px 0;
+}
+.messages-page .send-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+}
+.messages-page .send-form input[type="text"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+.messages-page .send-form button {
+    padding: 8px 16px;
+    background: cornflowerblue;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.messages-page .empty-hint {
+    color: #999;
+    padding: 20px 0;
+}
 .navigation li {
     position: relative;
 }
@@ -154,17 +352,73 @@ body {
     margin-left: 4px;
     vertical-align: middle;
 }
-.messages-page .messages-list li {
-    padding: 6px 10px;
-    border-radius: 4px;
-    margin-bottom: 2px;
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
 }
-.messages-page .messages-list li.has-unread {
-    background-color: #eaf2ff;
+.modal-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    min-width: 320px;
+    max-width: 420px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+.modal-box h3 {
+    margin-top: 0;
+}
+.modal-box label {
+    display: block;
+    margin: 10px 0 4px;
     font-weight: bold;
+    font-size: 13px;
 }
-.messages-page .messages-list li.active-partner {
-    background-color: #d4e6ff;
+.modal-box input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+.member-checkboxes {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 8px;
+}
+.checkbox-label {
+    display: block;
+    padding: 4px 0;
+    font-weight: normal !important;
+    cursor: pointer;
+}
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+.modal-actions button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.modal-actions button[type="submit"] {
+    background: cornflowerblue;
+    color: #fff;
+}
+.modal-actions button[type="button"] {
+    background: #eee;
+    color: #333;
 }
 .container input {
     background-color: #f5f5f5;

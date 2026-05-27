@@ -54,6 +54,24 @@ class MessageModel
         return $query->rowCount() === 1;
     }
 
+    public static function getUnreadCounts($user_id)
+    {
+        $db = DatabaseFactory::getFactory()->getConnection();
+
+        $sql = "SELECT sender_id, COUNT(*) AS cnt
+                FROM messages
+                WHERE receiver_id = :user_id AND is_read = 0
+                GROUP BY sender_id";
+        $query = $db->prepare($sql);
+        $query->execute([':user_id' => $user_id]);
+
+        $counts = [];
+        foreach ($query->fetchAll() as $row) {
+            $counts[$row->sender_id] = (int) $row->cnt;
+        }
+        return $counts;
+    }
+
     public static function markAsRead($partner_id, $user_id)
     {
         $db = DatabaseFactory::getFactory()->getConnection();

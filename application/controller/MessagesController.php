@@ -11,6 +11,7 @@ class MessagesController extends Controller
         $me = Session::get('user_id');
 
         $this->View->users = MessageModel::getChatPartners($me);
+        $this->View->unread = MessageModel::getUnreadCounts($me);
 
         $partner_id = Request::get('partner');
 

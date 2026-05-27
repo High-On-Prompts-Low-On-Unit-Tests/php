@@ -32,8 +32,11 @@
                 <li <?php if (View::checkForActiveController($filename, "dashboard")) { echo ' class="active" '; } ?> >
                     <a href="<?php echo Config::get('URL'); ?>dashboard/index">Dashboard</a>
                 </li>
+                <?php $unread = MessageModel::getUnreadCounts(Session::get('user_id')); ?>
                 <li <?php if (View::checkForActiveController($filename, "messages")) { echo ' class="active" '; } ?> >
-                    <a href="<?php echo Config::get('URL'); ?>messages/index">Messages</a>
+                    <a href="<?php echo Config::get('URL'); ?>messages/index">Messages<?php
+                        if (array_sum($unread) > 0) echo ' <span class="badge">' . array_sum($unread) . '</span>';
+                    ?></a>
                 </li>
                 <li <?php if (View::checkForActiveController($filename, "note")) { echo ' class="active" '; } ?> >
                     <a href="<?php echo Config::get('URL'); ?>note/index">My Notes</a>

@@ -9,9 +9,11 @@
                 <?php if (!empty($this->users)) { ?>
                     <ul>
                         <?php foreach ($this->users as $u) { ?>
-                            <li>
+                            <?php $n = isset($this->unread[$u->user_id]) ? $this->unread[$u->user_id] : 0; ?>
+                            <li class="<?= $n ? 'has-unread' : ''; ?> <?= $this->active_partner_id == $u->user_id ? 'active-partner' : ''; ?>">
                                 <a href="<?= Config::get('URL') . 'messages/index?partner=' . $u->user_id; ?>">
                                     <?= htmlentities($u->user_name); ?>
+                                    <?php if ($n) echo '<span class="badge">' . $n . '</span>'; ?>
                                 </a>
                             </li>
                         <?php } ?>

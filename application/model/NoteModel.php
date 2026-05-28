@@ -23,7 +23,7 @@ class NoteModel
     }
 
     /**
-     * Get a single note
+     * Get a single note (PDO version — used by the application)
      * @param int $note_id id of the specific note
      * @return object a single object (the result)
      */
@@ -37,6 +37,53 @@ class NoteModel
 
         // fetch() is the PDO method that gets a single result
         return $query->fetch();
+    }
+
+    /**
+     * Get a single note (MySQLi version — same logic, different DB extension)
+     * @param int $note_id id of the specific note
+     * @return object|null a single object (the result) or null
+     */
+    public static function getNoteMySQLi($note_id)
+    {
+        // 1. Verbindung: MySQLi direkt instanziieren (kein Singleton wie bei PDO)
+        $mysqli = new mysqli(
+            Config::get('DB_HOST'),
+            Config::get('DB_USER'),
+            Config::get('DB_PASS'),
+            Config::get('DB_NAME'),
+            (int) Config::get('DB_PORT')
+        );
+
+        if ($mysqli->connect_error) {
+            echo 'Database connection failed: ' . $mysqli->connect_errno;
+            exit;
+        }
+
+        $mysqli->set_charset(Config::get('DB_CHARSET'));
+
+        // 2. SQL: Fragezeichen-Platzhalter statt benannter Platzhalter
+        $sql = "SELECT user_id, note_id, note_text FROM notes WHERE user_id = ? AND note_id = ? LIMIT 1";
+
+        // 3. Prepare: Statement vorbereiten
+        $stmt = $mysqli->prepare($sql);
+
+        // 4. Bind: Parameter separat binden ("ii" = zwei Integer)
+        $user_id = Session::get('user_id');
+        $stmt->bind_param("ii", $user_id, $note_id);
+
+        // 5. Execute: Ausführen
+        $stmt->execute();
+
+        // 6. Fetch: Result-Set holen, dann Objekt abrufen
+        $result = $stmt->get_result();
+        $note = $result->fetch_object();
+
+        // 7. Close: Statement und Verbindung schließen
+        $stmt->close();
+        $mysqli->close();
+
+        return $note;
     }
 
     /**

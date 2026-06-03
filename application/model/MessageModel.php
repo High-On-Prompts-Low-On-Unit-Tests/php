@@ -5,23 +5,7 @@ class MessageModel
     {
         $db = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "SELECT g.id, g.name, g.type, g.created_by,
-                       CASE
-                           WHEN g.type = 'direct' THEN (
-                               SELECT u.user_name FROM group_members gm2
-                               JOIN users u ON u.user_id = gm2.user_id
-                               WHERE gm2.group_id = g.id AND gm2.user_id != :user_id
-                               LIMIT 1
-                           )
-                           ELSE g.name
-                       END AS display_name,
-                       (SELECT gm3.created_at FROM group_messages gm3
-                        WHERE gm3.group_id = g.id ORDER BY gm3.created_at DESC LIMIT 1
-                       ) AS last_message_at
-                FROM chat_groups g
-                JOIN group_members gm ON gm.group_id = g.id AND gm.user_id = :user_id
-                ORDER BY last_message_at DESC, g.created_at DESC";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_get_user_groups(:user_id)");
         $query->execute([':user_id' => $user_id]);
 
         return $query->fetchAll();
@@ -31,13 +15,7 @@ class MessageModel
     {
         $db = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "SELECT m.id, m.group_id, m.sender_id, m.message_text, m.created_at,
-                       u.user_name AS sender_name
-                FROM group_messages m
-                JOIN users u ON u.user_id = m.sender_id
-                WHERE m.group_id = :group_id
-                ORDER BY m.created_at ASC";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_get_group_messages(:group_id)");
         $query->execute([':group_id' => $group_id]);
 
         return $query->fetchAll();
@@ -56,9 +34,7 @@ class MessageModel
 
         $db = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "INSERT INTO group_messages (group_id, sender_id, message_text)
-                VALUES (:group_id, :sender_id, :message_text)";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_send_message(:group_id, :sender_id, :message_text)");
         $query->execute([
             ':group_id' => $group_id,
             ':sender_id' => $sender_id,
@@ -74,10 +50,11 @@ class MessageModel
 
         $db->beginTransaction();
 
-        $sql = "INSERT INTO chat_groups (name, type, created_by) VALUES (:name, 'group', :created_by)";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_create_group(:name, 'group', :created_by, @group_id)");
         $query->execute([':name' => trim($name), ':created_by' => $creator_id]);
-        $group_id = $db->lastInsertId();
+        $query->closeCursor();
+
+        $group_id = $db->query("SELECT @group_id AS id")->fetch()->id;
 
         self::insertMember($db, $group_id, $creator_id, 'admin');
 
@@ -100,14 +77,10 @@ class MessageModel
 
         $db = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "SELECT g.id FROM chat_groups g
-                JOIN group_members gm1 ON gm1.group_id = g.id AND gm1.user_id = :user_id
-                JOIN group_members gm2 ON gm2.group_id = g.id AND gm2.user_id = :partner_id
-                WHERE g.type = 'direct'
-                LIMIT 1";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_find_direct_chat(:user_id, :partner_id)");
         $query->execute([':user_id' => $user_id, ':partner_id' => $partner_id]);
         $row = $query->fetch();
+        $query->closeCursor();
 
         if ($row) {
             return $row->id;
@@ -115,10 +88,11 @@ class MessageModel
 
         $db->beginTransaction();
 
-        $sql = "INSERT INTO chat_groups (name, type, created_by) VALUES (NULL, 'direct', :created_by)";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_create_group(NULL, 'direct', :created_by, @group_id)");
         $query->execute([':created_by' => $user_id]);
-        $group_id = $db->lastInsertId();
+        $query->closeCursor();
+
+        $group_id = $db->query("SELECT @group_id AS id")->fetch()->id;
 
         self::insertMember($db, $group_id, $user_id, 'member');
         self::insertMember($db, $group_id, $partner_id, 'member');
@@ -161,8 +135,8 @@ class MessageModel
         }
 
         $db = DatabaseFactory::getFactory()->getConnection();
-        $sql = "DELETE FROM group_members WHERE group_id = :group_id AND user_id = :user_id";
-        $query = $db->prepare($sql);
+
+        $query = $db->prepare("CALL sp_remove_member(:group_id, :user_id)");
         $query->execute([':group_id' => $group_id, ':user_id' => $user_id]);
 
         return $query->rowCount() === 1;
@@ -176,8 +150,8 @@ class MessageModel
         }
 
         $db = DatabaseFactory::getFactory()->getConnection();
-        $sql = "DELETE FROM group_members WHERE group_id = :group_id AND user_id = :user_id";
-        $query = $db->prepare($sql);
+
+        $query = $db->prepare("CALL sp_remove_member(:group_id, :user_id)");
         $query->execute([':group_id' => $group_id, ':user_id' => $user_id]);
 
         return $query->rowCount() === 1;
@@ -195,9 +169,9 @@ class MessageModel
         }
 
         $db = DatabaseFactory::getFactory()->getConnection();
-        $sql = "UPDATE chat_groups SET name = :name WHERE id = :id";
-        $query = $db->prepare($sql);
-        $query->execute([':name' => trim($name), ':id' => $group_id]);
+
+        $query = $db->prepare("CALL sp_rename_group(:id, :name)");
+        $query->execute([':id' => $group_id, ':name' => trim($name)]);
 
         return true;
     }
@@ -205,67 +179,64 @@ class MessageModel
     public static function getGroup($group_id)
     {
         $db = DatabaseFactory::getFactory()->getConnection();
-        $sql = "SELECT * FROM chat_groups WHERE id = :id";
-        $query = $db->prepare($sql);
-        $query->execute([':id' => $group_id]);
 
-        return $query->fetch();
+        $query = $db->prepare("CALL sp_get_group(:id)");
+        $query->execute([':id' => $group_id]);
+        $result = $query->fetch();
+        $query->closeCursor();
+
+        return $result;
     }
 
     public static function getGroupMembers($group_id)
     {
         $db = DatabaseFactory::getFactory()->getConnection();
-        $sql = "SELECT gm.user_id, gm.role, gm.joined_at, u.user_name
-                FROM group_members gm
-                JOIN users u ON u.user_id = gm.user_id
-                WHERE gm.group_id = :group_id
-                ORDER BY gm.role ASC, u.user_name ASC";
-        $query = $db->prepare($sql);
-        $query->execute([':group_id' => $group_id]);
 
-        return $query->fetchAll();
+        $query = $db->prepare("CALL sp_get_group_members(:group_id)");
+        $query->execute([':group_id' => $group_id]);
+        $result = $query->fetchAll();
+        $query->closeCursor();
+
+        return $result;
     }
 
     public static function isGroupMember($group_id, $user_id)
     {
         $db = DatabaseFactory::getFactory()->getConnection();
-        $sql = "SELECT 1 FROM group_members WHERE group_id = :group_id AND user_id = :user_id";
-        $query = $db->prepare($sql);
-        $query->execute([':group_id' => $group_id, ':user_id' => $user_id]);
 
-        return (bool) $query->fetch();
+        $query = $db->prepare("CALL sp_is_group_member(:group_id, :user_id)");
+        $query->execute([':group_id' => $group_id, ':user_id' => $user_id]);
+        $result = (bool) $query->fetch();
+        $query->closeCursor();
+
+        return $result;
     }
 
     public static function isGroupAdmin($group_id, $user_id)
     {
         $db = DatabaseFactory::getFactory()->getConnection();
-        $sql = "SELECT 1 FROM group_members WHERE group_id = :group_id AND user_id = :user_id AND role = 'admin'";
-        $query = $db->prepare($sql);
-        $query->execute([':group_id' => $group_id, ':user_id' => $user_id]);
 
-        return (bool) $query->fetch();
+        $query = $db->prepare("CALL sp_is_group_admin(:group_id, :user_id)");
+        $query->execute([':group_id' => $group_id, ':user_id' => $user_id]);
+        $result = (bool) $query->fetch();
+        $query->closeCursor();
+
+        return $result;
     }
 
     public static function getUnreadCounts($user_id)
     {
         $db = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "SELECT gm.group_id,
-                       COUNT(msg.id) AS cnt
-                FROM group_members gm
-                LEFT JOIN group_messages msg
-                    ON msg.group_id = gm.group_id
-                    AND msg.sender_id != :user_id
-                    AND (gm.last_read_at IS NULL OR msg.created_at > gm.last_read_at)
-                WHERE gm.user_id = :user_id
-                GROUP BY gm.group_id";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_get_unread_counts(:user_id)");
         $query->execute([':user_id' => $user_id]);
 
         $counts = [];
         foreach ($query->fetchAll() as $row) {
             $counts[$row->group_id] = (int) $row->cnt;
         }
+        $query->closeCursor();
+
         return $counts;
     }
 
@@ -273,10 +244,9 @@ class MessageModel
     {
         $db = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "UPDATE group_members SET last_read_at = NOW()
-                WHERE group_id = :group_id AND user_id = :user_id";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_mark_as_read(:group_id, :user_id)");
         $query->execute([':group_id' => $group_id, ':user_id' => $user_id]);
+        $query->closeCursor();
 
         return true;
     }
@@ -285,8 +255,7 @@ class MessageModel
     {
         $db = DatabaseFactory::getFactory()->getConnection();
 
-        $sql = "SELECT user_id, user_name FROM users WHERE user_id != :user_id ORDER BY user_name";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_get_all_users(:user_id)");
         $query->execute([':user_id' => $exclude_user_id]);
 
         return $query->fetchAll();
@@ -294,8 +263,8 @@ class MessageModel
 
     private static function insertMember($db, $group_id, $user_id, $role)
     {
-        $sql = "INSERT INTO group_members (group_id, user_id, role) VALUES (:group_id, :user_id, :role)";
-        $query = $db->prepare($sql);
+        $query = $db->prepare("CALL sp_insert_member(:group_id, :user_id, :role)");
         $query->execute([':group_id' => $group_id, ':user_id' => $user_id, ':role' => $role]);
+        $query->closeCursor();
     }
 }

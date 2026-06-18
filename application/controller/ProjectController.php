@@ -177,6 +177,31 @@ class ProjectController extends Controller
     }
 
     /**
+     * AJAX user search for invite autocomplete.
+     * Returns JSON array of {id, text} objects for Select2.
+     * Owner only.
+     *
+     * @param int $projectId
+     */
+    public function searchUsers($projectId)
+    {
+        $userId = Session::get('user_id');
+
+        if (!ProjectModel::isOwner($projectId, $userId)) {
+            $this->View->renderJSON(array());
+            return;
+        }
+
+        $search  = Request::get('q') ?: '';
+        $users   = ProjectModel::searchUsers($projectId, $search);
+        $results = array();
+        foreach ($users as $u) {
+            $results[] = array('id' => $u->user_id, 'text' => $u->user_name);
+        }
+        $this->View->renderJSON($results);
+    }
+
+    /**
      * Remove a member from a project. Owner only.
      *
      * @param int $projectId

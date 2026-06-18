@@ -35,21 +35,22 @@
         display: flex; justify-content: space-between; align-items: center;
         border-bottom: 2px solid #ddd; margin-bottom: 10px;
     }
-    .col-todo    .kanban-col-header { border-color: #aaa; }
+    .col-todo       .kanban-col-header { border-color: #aaa; }
     .col-inprogress .kanban-col-header { border-color: #0074d9; }
-    .col-done   .kanban-col-header { border-color: #2ecc40; }
+    .col-done       .kanban-col-header { border-color: #2ecc40; }
 
     .task-count {
         background: #ddd; color: #555;
         font-size: 0.78em; padding: 2px 7px; border-radius: 10px;
     }
     .col-inprogress .task-count { background: #d6eaff; color: #0074d9; }
-    .col-done .task-count { background: #d4f5d4; color: #27ae60; }
+    .col-done       .task-count { background: #d4f5d4; color: #27ae60; }
 
     /* Task cards */
     .task-card {
         background: #fff;
         border: 1px solid #ddd;
+        border-left: 3px solid #ddd;
         border-radius: 4px;
         padding: 10px 12px;
         margin-bottom: 8px;
@@ -58,14 +59,29 @@
         transition: box-shadow 0.15s;
     }
     .task-card:hover { box-shadow: 0 3px 8px rgba(0,0,0,0.12); }
-    .task-card.overdue { border-left: 3px solid #e74c3c; }
+    .task-card.priority-low    { border-left-color: #2ecc40; }
+    .task-card.priority-medium { border-left-color: #f39c12; }
+    .task-card.priority-high   { border-left-color: #e74c3c; }
+    .task-card.overdue         { border-left-color: #e74c3c !important; }
+
     .task-card h4 { margin: 0 0 5px; font-size: 0.92em; }
     .task-card h4 a { text-decoration: none; color: #333; }
     .task-card h4 a:hover { color: #0074d9; }
-    .task-card .task-meta { font-size: 0.78em; color: #999; }
-    .task-card .task-meta .assigned { color: #0074d9; }
-    .task-card .task-meta .deadline-ok { color: #27ae60; }
-    .task-card .task-meta .deadline-over { color: #e74c3c; font-weight: bold; }
+    .task-card .task-meta {
+        font-size: 0.78em; color: #999;
+        display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+    }
+    .task-card .task-meta .assigned       { color: #0074d9; }
+    .task-card .task-meta .deadline-ok    { color: #27ae60; }
+    .task-card .task-meta .deadline-over  { color: #e74c3c; font-weight: bold; }
+
+    .priority-badge {
+        font-size: 0.72em; padding: 1px 6px; border-radius: 8px;
+        font-weight: bold; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .priority-badge.low    { background: #d4f5d4; color: #27ae60; }
+    .priority-badge.medium { background: #fef3cd; color: #d68910; }
+    .priority-badge.high   { background: #fde8e8; color: #c0392b; }
 
     .add-task-link {
         display: block; text-align: center; margin-top: 8px;
@@ -78,6 +94,7 @@
     .members-panel {
         margin-top: 30px; padding: 15px;
         border: 1px solid #ddd; border-radius: 6px; background: #fafafa;
+        overflow: visible;
     }
     .members-panel h3 { margin: 0 0 12px; font-size: 1em; }
     .member-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
@@ -88,12 +105,35 @@
     }
     .member-chip .role { color: #888; font-size: 0.8em; }
     .member-chip a { color: #c00; text-decoration: none; font-size: 0.8em; }
-    .invite-form { display: flex; gap: 8px; }
-    .invite-form input[type=text] { padding: 5px 8px; border: 1px solid #ccc; border-radius: 3px; flex: 1; }
-    .invite-form button { padding: 5px 14px; background: #0074d9; color: #fff; border: none; border-radius: 3px; cursor: pointer; }
+
+    .invite-form { display: flex; gap: 8px; align-items: center; }
+    .invite-form button {
+        padding: 6px 16px; background: #0074d9; color: #fff;
+        border: none; border-radius: 3px; cursor: pointer; white-space: nowrap;
+    }
     .invite-form button:hover { background: #005fa3; }
 
-    /* Drag & Drop sortable ghost */
+    /* Autocomplete */
+    .ac-wrap { position: relative; flex: 1; min-width: 220px; }
+    .ac-wrap input[type=text] {
+        width: 100%; padding: 6px 10px; border: 1px solid #ccc;
+        border-radius: 3px; font-size: 0.9em; box-sizing: border-box;
+    }
+    .ac-wrap input[type=text]:focus { outline: none; border-color: #0074d9; }
+    .ac-dropdown {
+        display: none; position: fixed;
+        background: #fff; border: 1px solid #ccc;
+        border-radius: 3px; z-index: 99999;
+        max-height: 200px; overflow-y: auto;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        min-width: 220px;
+    }
+    .ac-item {
+        padding: 7px 10px; cursor: pointer; font-size: 0.9em;
+    }
+    .ac-item:hover { background: #e8f4fd; color: #0074d9; }
+
+    /* Drag & Drop */
     .sortable-ghost { opacity: 0.4; }
     .sortable-drag  { box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
 </style>
@@ -114,9 +154,7 @@
             <?php endif; ?>
         </div>
         <div class="actions" style="margin-left:auto;">
-            <a href="<?= Config::get('URL'); ?>task/create/<?= $this->project->id; ?>" class="primary">
-                + Task
-            </a>
+            <a href="<?= Config::get('URL'); ?>task/create/<?= $this->project->id; ?>" class="primary">+ Task</a>
             <?php if ($this->is_owner): ?>
                 <a href="<?= Config::get('URL'); ?>project/edit/<?= $this->project->id; ?>">Bearbeiten</a>
                 <a href="<?= Config::get('URL'); ?>project/delete/<?= $this->project->id; ?>"
@@ -128,7 +166,6 @@
 
     <!-- Kanban Board -->
     <div class="kanban-board">
-
         <?php
         $columns = array(
             'todo'       => 'To Do',
@@ -146,19 +183,22 @@
                 <span class="task-count"><?= count($colTasks); ?></span>
             </div>
 
-            <!-- Task cards -->
             <div class="task-list" id="list-<?= $status; ?>">
                 <?php foreach ($colTasks as $task):
-                    $overdue = ($task->deadline && $task->deadline < $today && $status !== 'done');
+                    $overdue  = ($task->deadline && $task->deadline < $today && $status !== 'done');
+                    $priority = $task->priority ?? 'medium';
+                    $cls      = 'task-card priority-' . $priority . ($overdue ? ' overdue' : '');
                 ?>
-                <div class="task-card <?= $overdue ? 'overdue' : ''; ?>"
-                     data-task-id="<?= $task->id; ?>">
+                <div class="<?= $cls; ?>" data-task-id="<?= $task->id; ?>">
                     <h4>
                         <a href="<?= Config::get('URL'); ?>task/edit/<?= $task->id; ?>">
                             <?= htmlspecialchars($task->title); ?>
                         </a>
                     </h4>
                     <div class="task-meta">
+                        <span class="priority-badge <?= $priority; ?>">
+                            <?= $priority === 'low' ? 'Low' : ($priority === 'high' ? 'High' : 'Med'); ?>
+                        </span>
                         <?php if ($task->assigned_name): ?>
                             <span class="assigned">@<?= htmlspecialchars($task->assigned_name); ?></span>
                         <?php endif; ?>
@@ -196,8 +236,16 @@
             <?php endforeach; ?>
         </div>
         <?php if ($this->is_owner): ?>
-            <form class="invite-form" action="<?= Config::get('URL'); ?>project/addMember/<?= $this->project->id; ?>" method="post">
-                <input type="text" name="username" placeholder="Username einladen …" required />
+            <form class="invite-form"
+                  action="<?= Config::get('URL'); ?>project/addMember/<?= $this->project->id; ?>"
+                  method="post"
+                  onsubmit="return validateInvite();">
+                <input type="hidden" name="username" id="invite-username" value="" />
+                <div class="ac-wrap">
+                    <input type="text" id="invite-input" autocomplete="off"
+                           placeholder="Username suchen …" />
+                    <div id="invite-dropdown" class="ac-dropdown"></div>
+                </div>
                 <button type="submit">Einladen</button>
             </form>
         <?php endif; ?>
@@ -205,39 +253,92 @@
 
 </div>
 
-<!-- SortableJS via CDN for Drag & Drop -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
 (function () {
-    var lists = document.querySelectorAll('.task-list');
     var baseUrl = '<?= Config::get('URL'); ?>';
 
-    lists.forEach(function (list) {
+    /* ── Drag & Drop ── */
+    document.querySelectorAll('.task-list').forEach(function (list) {
         Sortable.create(list, {
             group: 'tasks',
             animation: 150,
             ghostClass: 'sortable-ghost',
             dragClass: 'sortable-drag',
             onEnd: function (evt) {
-                var taskId = evt.item.dataset.taskId;
+                var taskId    = evt.item.dataset.taskId;
                 var newStatus = evt.to.closest('.kanban-col').dataset.status;
-
-                // update task count badges
                 document.querySelectorAll('.kanban-col').forEach(function (col) {
-                    var count = col.querySelector('.task-list').children.length;
-                    col.querySelector('.task-count').textContent = count;
+                    col.querySelector('.task-count').textContent =
+                        col.querySelector('.task-list').children.length;
                 });
-
-                // persist status change via POST
-                var form = new FormData();
-                form.append('status', newStatus);
-
-                fetch(baseUrl + 'task/changeStatus/' + taskId, {
-                    method: 'POST',
-                    body: form
-                });
+                var fd = new FormData();
+                fd.append('status', newStatus);
+                fetch(baseUrl + 'task/changeStatus/' + taskId, { method: 'POST', body: fd });
             }
         });
     });
+
+    /* ── Invite autocomplete (vanilla JS + fetch) ── */
+    <?php if ($this->is_owner): ?>
+    var projectId  = <?= (int)$this->project->id; ?>;
+    var invInput   = document.getElementById('invite-input');
+    var invHidden  = document.getElementById('invite-username');
+    var acTimer;
+
+    /* Move dropdown to body so no parent can clip it */
+    var invDrop = document.getElementById('invite-dropdown');
+    document.body.appendChild(invDrop);
+
+    function positionDrop() {
+        var rect = invInput.getBoundingClientRect();
+        invDrop.style.top   = rect.bottom + 'px';
+        invDrop.style.left  = rect.left   + 'px';
+        invDrop.style.width = rect.width  + 'px';
+    }
+
+    invInput.addEventListener('input', function () {
+        clearTimeout(acTimer);
+        invHidden.value = '';
+        var q = invInput.value.trim();
+        if (q.length < 1) { closeDrop(); return; }
+        acTimer = setTimeout(function () {
+            fetch(baseUrl + 'project/searchUsers/' + projectId + '?q=' + encodeURIComponent(q))
+                .then(function (r) { return r.json(); })
+                .then(function (results) {
+                    invDrop.innerHTML = '';
+                    if (!results.length) { closeDrop(); return; }
+                    results.forEach(function (u) {
+                        var item = document.createElement('div');
+                        item.className = 'ac-item';
+                        item.textContent = u.text;
+                        item.addEventListener('mousedown', function (e) {
+                            e.preventDefault();
+                            invInput.value  = u.text;
+                            invHidden.value = u.text;
+                            closeDrop();
+                        });
+                        invDrop.appendChild(item);
+                    });
+                    positionDrop();
+                    invDrop.style.display = 'block';
+                })
+                .catch(function () { closeDrop(); });
+        }, 250);
+    });
+
+    invInput.addEventListener('blur', function () { setTimeout(closeDrop, 150); });
+
+    function closeDrop() { invDrop.style.display = 'none'; }
+
+    function validateInvite() {
+        if (!invHidden.value) {
+            alert('Bitte einen User aus der Liste auswählen.');
+            return false;
+        }
+        return true;
+    }
+    window.validateInvite = validateInvite;
+    <?php endif; ?>
 }());
 </script>

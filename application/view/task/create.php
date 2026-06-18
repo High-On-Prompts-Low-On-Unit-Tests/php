@@ -16,8 +16,7 @@
     .form-group select,
     .form-group textarea {
         width: 100%; padding: 8px 10px; border: 1px solid #ccc;
-        border-radius: 4px; font-size: 0.95em; box-sizing: border-box;
-        background: #fff;
+        border-radius: 4px; font-size: 0.95em; box-sizing: border-box; background: #fff;
     }
     .form-group textarea { height: 90px; resize: vertical; }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -32,10 +31,24 @@
     .btn-primary:hover { background: #005fa3; }
     .btn-cancel {
         padding: 8px 16px; background: #f5f5f5; color: #333;
-        border: 1px solid #ccc; border-radius: 4px; text-decoration: none;
-        font-size: 0.95em;
+        border: 1px solid #ccc; border-radius: 4px; text-decoration: none; font-size: 0.95em;
     }
     .btn-cancel:hover { background: #e8e8e8; }
+
+    /* Combobox */
+    .cb-wrap { position: relative; }
+    .cb-wrap input[type=text] { cursor: pointer; }
+    .cb-dropdown {
+        display: none; position: fixed;
+        background: #fff; border: 1px solid #ccc; border-radius: 4px;
+        z-index: 99999; max-height: 200px; overflow-y: auto;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+    .cb-item {
+        padding: 8px 10px; cursor: pointer; font-size: 0.92em;
+    }
+    .cb-item:hover, .cb-item.active { background: #e8f4fd; color: #0074d9; }
+    .cb-item.none-option { color: #999; font-style: italic; }
 </style>
 
 <div class="container">
@@ -62,31 +75,55 @@
                         <?php
                         $preStatus = $this->pre_status ?? 'todo';
                         $statuses  = array('todo' => 'To Do', 'inprogress' => 'In Progress', 'done' => 'Done');
-                        foreach ($statuses as $val => $label):
+                        foreach ($statuses as $val => $lbl):
                         ?>
                             <option value="<?= $val; ?>" <?= ($preStatus === $val ? 'selected' : ''); ?>>
-                                <?= $label; ?>
+                                <?= $lbl; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="priority">Priorität</label>
+                    <select id="priority" name="priority">
+                        <?php
+                        $curPrio = $_POST['priority'] ?? 'medium';
+                        $prios   = array('low' => '🟢 Low', 'medium' => '🟡 Medium', 'high' => '🔴 High');
+                        foreach ($prios as $val => $lbl):
+                        ?>
+                            <option value="<?= $val; ?>" <?= ($curPrio === $val ? 'selected' : ''); ?>>
+                                <?= $lbl; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Zuweisen an</label>
+                    <input type="hidden" id="assigned_to" name="assigned_to"
+                           value="<?= htmlspecialchars($_POST['assigned_to'] ?? ''); ?>" />
+                    <div class="cb-wrap">
+                        <input type="text" id="assigned_display" autocomplete="off"
+                               placeholder="— niemanden —" readonly
+                               value="<?php
+                                   $preAssigned = $_POST['assigned_to'] ?? '';
+                                   if ($preAssigned) {
+                                       foreach ($this->members as $m) {
+                                           if ($m->user_id == $preAssigned) {
+                                               echo htmlspecialchars($m->user_name); break;
+                                           }
+                                       }
+                                   }
+                               ?>" />
+                        <div id="assigned_dropdown" class="cb-dropdown"></div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="deadline">Deadline</label>
                     <input type="date" id="deadline" name="deadline"
                            value="<?= htmlspecialchars($_POST['deadline'] ?? ''); ?>" />
                 </div>
-            </div>
-            <div class="form-group">
-                <label for="assigned_to">Zuweisen an</label>
-                <select id="assigned_to" name="assigned_to">
-                    <option value="">— niemanden —</option>
-                    <?php foreach ($this->members as $m): ?>
-                        <option value="<?= $m->user_id; ?>"
-                            <?= (($_POST['assigned_to'] ?? '') == $m->user_id ? 'selected' : ''); ?>>
-                            <?= htmlspecialchars($m->user_name); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
             </div>
             <div class="form-actions">
                 <button type="submit" name="submit" value="1" class="btn-primary">Task erstellen</button>
@@ -95,3 +132,67 @@
         </form>
     </div>
 </div>
+
+<?php
+// Pass members as JSON for the combobox
+$membersJson = json_encode(array_map(function($m) {
+    return array('id' => $m->user_id, 'name' => $m->user_name);
+}, $this->members));
+?>
+<script>
+(function () {
+    var members  = <?= $membersJson; ?>;
+    var display  = document.getElementById('assigned_display');
+    var hidden   = document.getElementById('assigned_to');
+    var drop     = document.getElementById('assigned_dropdown');
+    document.body.appendChild(drop);
+
+    function buildItems(filter) {
+        drop.innerHTML = '';
+        var all = [{id: '', name: '— niemanden —'}].concat(members);
+        var q   = (filter || '').toLowerCase();
+        all.forEach(function (m) {
+            if (q && m.id && m.name.toLowerCase().indexOf(q) === -1) return;
+            var item = document.createElement('div');
+            item.className = 'cb-item' + (m.id === '' ? ' none-option' : '');
+            item.textContent = m.name;
+            item.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                hidden.value  = m.id;
+                display.value = m.id ? m.name : '';
+                display.placeholder = '— niemanden —';
+                closeDrop();
+            });
+            drop.appendChild(item);
+        });
+    }
+
+    function openDrop() {
+        var rect = display.getBoundingClientRect();
+        drop.style.top   = rect.bottom + 'px';
+        drop.style.left  = rect.left   + 'px';
+        drop.style.width = rect.width  + 'px';
+        buildItems(display.value);
+        drop.style.display = 'block';
+        display.readOnly = false;
+        display.select();
+    }
+
+    function closeDrop() {
+        drop.style.display = 'none';
+        display.readOnly = true;
+        /* restore display to selected name if user typed but didn't pick */
+        var found = members.find(function (m) { return m.id == hidden.value; });
+        display.value = found ? found.name : '';
+    }
+
+    display.addEventListener('click', openDrop);
+    display.addEventListener('input', function () {
+        buildItems(display.value);
+        drop.style.display = 'block';
+    });
+    display.addEventListener('blur', function () {
+        setTimeout(closeDrop, 150);
+    });
+}());
+</script>

@@ -213,4 +213,32 @@ class ProjectModel
         $query->execute(array(':user_name' => $username));
         return $query->fetch();
     }
+
+    /**
+     * Search active users by partial username, excluding existing project members.
+     * Used for the invite autocomplete AJAX endpoint.
+     *
+     * @param int    $projectId
+     * @param string $search  partial username
+     * @return array  objects with user_id and user_name
+     */
+    public static function searchUsers($projectId, $search)
+    {
+        $database = DatabaseFactory::getFactory()->getConnection();
+        $sql = "SELECT u.user_id, u.user_name
+                FROM users u
+                WHERE u.user_name LIKE :search
+                  AND u.user_active = 1
+                  AND u.user_id NOT IN (
+                      SELECT pm.user_id FROM project_members pm WHERE pm.project_id = :project_id
+                  )
+                ORDER BY u.user_name ASC
+                LIMIT 10";
+        $query = $database->prepare($sql);
+        $query->execute(array(
+            ':search'     => '%' . $search . '%',
+            ':project_id' => $projectId
+        ));
+        return $query->fetchAll();
+    }
 }

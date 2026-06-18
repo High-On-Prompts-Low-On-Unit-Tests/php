@@ -42,6 +42,7 @@ class TaskController extends Controller
             $status      = Request::post('status') ?: 'todo';
             $assignedTo  = Request::post('assigned_to') ?: null;
             $deadline    = Request::post('deadline') ?: null;
+            $priority    = Request::post('priority') ?: 'medium';
 
             if (empty($title)) {
                 Session::add('feedback_negative', 'Titel darf nicht leer sein.');
@@ -49,7 +50,7 @@ class TaskController extends Controller
                 return;
             }
 
-            $taskId = TaskModel::createTask($projectId, $userId, $title, $description, $status, $assignedTo, $deadline);
+            $taskId = TaskModel::createTask($projectId, $userId, $title, $description, $status, $assignedTo, $deadline, $priority);
 
             if ($taskId) {
                 Session::add('feedback_positive', 'Task erstellt.');
@@ -103,6 +104,7 @@ class TaskController extends Controller
             $status      = Request::post('status') ?: 'todo';
             $assignedTo  = Request::post('assigned_to') ?: null;
             $deadline    = Request::post('deadline') ?: null;
+            $priority    = Request::post('priority') ?: 'medium';
 
             if (empty($title)) {
                 Session::add('feedback_negative', 'Titel darf nicht leer sein.');
@@ -115,7 +117,7 @@ class TaskController extends Controller
                 return;
             }
 
-            TaskModel::updateTask($taskId, $title, $description, $status, $assignedTo, $deadline);
+            TaskModel::updateTask($taskId, $title, $description, $status, $assignedTo, $deadline, $priority);
             Session::add('feedback_positive', 'Task aktualisiert.');
             Redirect::to('project/board/' . $task->project_id);
             return;

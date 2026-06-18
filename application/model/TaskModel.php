@@ -19,11 +19,11 @@ class TaskModel
      * @param string $deadline    date string (Y-m-d) or null
      * @return int|false  new task ID or false on failure
      */
-    public static function createTask($projectId, $createdBy, $title, $description, $status = 'todo', $assignedTo = null, $deadline = null)
+    public static function createTask($projectId, $createdBy, $title, $description, $status = 'todo', $assignedTo = null, $deadline = null, $priority = 'medium')
     {
         $database = DatabaseFactory::getFactory()->getConnection();
-        $sql = "INSERT INTO tasks (project_id, created_by, title, description, status, assigned_to, deadline)
-                VALUES (:project_id, :created_by, :title, :description, :status, :assigned_to, :deadline)";
+        $sql = "INSERT INTO tasks (project_id, created_by, title, description, status, priority, assigned_to, deadline)
+                VALUES (:project_id, :created_by, :title, :description, :status, :priority, :assigned_to, :deadline)";
         $query = $database->prepare($sql);
         $query->execute(array(
             ':project_id'  => $projectId,
@@ -31,6 +31,7 @@ class TaskModel
             ':title'       => $title,
             ':description' => $description,
             ':status'      => $status,
+            ':priority'    => $priority,
             ':assigned_to' => $assignedTo ?: null,
             ':deadline'    => $deadline ?: null
         ));
@@ -121,12 +122,12 @@ class TaskModel
      * @param string $deadline
      * @return bool
      */
-    public static function updateTask($taskId, $title, $description, $status, $assignedTo = null, $deadline = null)
+    public static function updateTask($taskId, $title, $description, $status, $assignedTo = null, $deadline = null, $priority = 'medium')
     {
         $database = DatabaseFactory::getFactory()->getConnection();
         $sql = "UPDATE tasks
                 SET title = :title, description = :description, status = :status,
-                    assigned_to = :assigned_to, deadline = :deadline
+                    priority = :priority, assigned_to = :assigned_to, deadline = :deadline
                 WHERE id = :id
                 LIMIT 1";
         $query = $database->prepare($sql);
@@ -134,6 +135,7 @@ class TaskModel
             ':title'       => $title,
             ':description' => $description,
             ':status'      => $status,
+            ':priority'    => $priority,
             ':assigned_to' => $assignedTo ?: null,
             ':deadline'    => $deadline ?: null,
             ':id'          => $taskId

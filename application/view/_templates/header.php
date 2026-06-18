@@ -44,6 +44,12 @@
                 <li <?php if (View::checkForActiveController($filename, "gallery")) { echo ' class="active" '; } ?> >
                     <a href="<?php echo Config::get('URL'); ?>gallery/index">Gallery</a>
                 </li>
+                <?php $openTasks = count(TaskModel::getTasksAssignedToUser(Session::get('user_id'))); ?>
+                <li <?php if (View::checkForActiveController($filename, "project")) { echo ' class="active" '; } ?> >
+                    <a href="<?php echo Config::get('URL'); ?>project">Projekte<?php
+                        if ($openTasks > 0) echo ' <span class="badge">' . $openTasks . '</span>';
+                    ?></a>
+                </li>
             <?php } else { ?>
                 <!-- for not logged in users -->
                 <li <?php if (View::checkForActiveControllerAndAction($filename, "login/index")) { echo ' class="active" '; } ?> >

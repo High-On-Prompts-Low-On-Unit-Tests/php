@@ -10,3 +10,10 @@
 
 #playwright
 .playwright-mcp/
+
+#documents
+project-documents/
+
+#lastenheft docx
+Lastenheft_*.doc*
+Standardprojekthandbuch*.doc*

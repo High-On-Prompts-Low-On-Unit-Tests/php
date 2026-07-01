@@ -43,4 +43,43 @@ class CaptchaModel
 
         return false;
     }
+
+    /**
+     * Verifies a Google reCAPTCHA v2 response token server-side.
+     * The token ($_POST['g-recaptcha-response']) is generated in the browser by the reCAPTCHA widget
+     * and sent together with our secret key to Google's siteverify endpoint. Google answers with a JSON
+     * object; we only continue if "success" is true.
+     *
+     * @param string $recaptcha_response The value of the hidden "g-recaptcha-response" field from the form
+     * @return bool true if Google confirms the captcha, false otherwise
+     */
+    public static function checkReCaptcha($recaptcha_response)
+    {
+        // no token at all (e.g. user did not solve the captcha) -> fail early
+        if (empty($recaptcha_response)) {
+            return false;
+        }
+
+        // data sent to Google: our private secret key + the token from the browser + the user's IP
+        $post_data = http_build_query(array(
+            'secret'   => Config::get('RECAPTCHA_SECRET_KEY'),
+            'response' => $recaptcha_response,
+            'remoteip' => $_SERVER['REMOTE_ADDR']
+        ));
+
+        // server-to-server POST request to Google's verification endpoint via cURL
+        $curl = curl_init('https://www.google.com/recaptcha/api/siteverify');
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $post_data);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        // local XAMPP usually has no up-to-date CA bundle, so we skip peer verification here
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+        $response = curl_exec($curl);
+        curl_close($curl);
+
+        // decode Google's JSON answer and return the success flag
+        $result = json_decode($response, true);
+
+        return isset($result['success']) && $result['success'] === true;
+    }
 }

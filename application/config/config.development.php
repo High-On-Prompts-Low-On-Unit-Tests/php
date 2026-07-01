@@ -76,6 +76,20 @@ return array(
     'CAPTCHA_WIDTH' => 359,
     'CAPTCHA_HEIGHT' => 100,
     /**
+     * Configuration for: Google reCAPTCHA v2 ("I'm not a robot" checkbox)
+     * The SITE_KEY is public and is rendered into the HTML of the register form.
+     * The SECRET_KEY is private, must NEVER be sent to the browser and is only used server-side
+     * to verify the token against https://www.google.com/recaptcha/api/siteverify
+     *
+     * The keys below are Google's official TEST keys: they always pass verification and show a
+     * "for testing purposes only" warning on the widget. Get your own real keys (bound to your
+     * domain) at https://www.google.com/recaptcha/admin/create and replace them here.
+     * 
+     * https://developers.google.com/recaptcha/docs/faq?hl=de#id-like-to-run-automated-tests-with-recaptcha.-what-should-i-do
+     */
+    'RECAPTCHA_SITE_KEY' => '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
+    'RECAPTCHA_SECRET_KEY' => '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe',
+    /**
      * Configuration for: Cookies
      * 1209600 seconds = 2 weeks
      * COOKIE_PATH is the path the cookie is valid on, usually "/" to make it valid on the whole domain.

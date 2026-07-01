@@ -22,6 +22,12 @@ class RegistrationModel
         $user_password_new = Request::post('user_password_new');
         $user_password_repeat = Request::post('user_password_repeat');
 
+        // verify the Google reCAPTCHA first: stop the registration if the captcha was not solved correctly
+        if (!CaptchaModel::checkReCaptcha(Request::post('g-recaptcha-response'))) {
+            Session::add('feedback_negative', Text::get('FEEDBACK_CAPTCHA_WRONG'));
+            return false;
+        }
+
         // stop registration flow if registrationInputValidation() returns false (= anything breaks the input check rules)
         $validation_result = self::registrationInputValidation($user_name, $user_password_new, $user_password_repeat, $user_email, $user_email_repeat);
         if (!$validation_result) {
